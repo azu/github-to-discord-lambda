@@ -38,7 +38,7 @@ function getAsync(bucketName) {
 }
 function putAsync(bucketName) {
     const lockData = {
-        lastExecutionTime: Date.now()
+        lastExecutionTime: Date.UTC()
     };
 
     const saveData = {

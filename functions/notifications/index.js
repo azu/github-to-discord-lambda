@@ -4,6 +4,8 @@ const parseGithubEvent = require("parse-github-event");
 const parseEventBody = require("./github/parse-event-body");
 const Twitter = require("twitter");
 const s3 = require("./s3");
+const moment = require("moment");
+const removeMd = require('remove-markdown');
 const isDEBUG = !!process.env.DEBUG;
 console.log("Debug mode: " + isDEBUG);
 const twitter = new Twitter({
@@ -34,12 +36,22 @@ function postToTwitter(message) {
     });
 }
 function getEvents(lastDate) {
+    const filterTypes = [
+        "WatchEvent",
+        "IssueCommentEvent",
+        "PullRequestEvent",
+        "IssuesEvent",
+        "FollowEvent",
+        "PublicEvent"
+    ];
     const me = gitHubAPI.getUser();
     return me._request('GET', '/events').then(function (response) {
         return response.data;
     }).then(function (response) {
         return response.filter(function (event) {
-            return new Date(event["created_at"]).getTime() > lastDate.getTime();
+            return moment(event["created_at"]).diff(lastDate) > 0;
+        }).filter(function (event) {
+            return filterTypes.indexOf(event.type) !== -1;
         }).map(buildEvent);
     });
 }
@@ -68,7 +80,7 @@ function buildEvent(event) {
         "repo_name": event.repo.name,
         "title": "[" + event.repo.name + "] " + eventDescription,
         "html_url": parsedEvent.html_url,
-        "body": parseEventBody(event) || "",
+        "body": removeMd(parseEventBody(event) || ""),
         "emoji": getEmoji(event)
     };
 }
@@ -142,9 +154,9 @@ function formatMessage(response) {
 exports.handle = function (event, context) {
     const bucketName = "github-to-twitter-lambda";
     s3.getAsync(bucketName).then(function (lastTime) {
-        const lastDate = lastTime > 0 ? new Date(lastTime) : new Date();
+        const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
-        const lastDateInUse = isDEBUG ? new Date(1970, 0, 1) : lastDate;
+        const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
         console.log("lastExecutedTime: " + lastDateInUse);
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
