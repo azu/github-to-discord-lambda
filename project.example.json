@@ -7,6 +7,7 @@
   "role": "arn:aws:iam::xxxxxxxxxxxx",
   "defaultEnvironment": "dev",
   "environment": {
+    "GITHUB_USER_NAME": "username",
     "GITHUB_TOKEN": "GitHub Person token need repos/notification/user",
     "TWITTER_CONSUMER_KEY": "app key",
     "TWITTER_CONSUMER_SECRET": "app secret",

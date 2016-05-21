@@ -45,7 +45,8 @@ function getEvents(lastDate) {
         "PublicEvent"
     ];
     const me = gitHubAPI.getUser();
-    return me._request('GET', '/events').then(function (response) {
+    const userName = process.env.GITHUB_USER_NAME;
+    return me._request('GET', '/users/' + userName + '/events').then(function (response) {
         return response.data;
     }).then(function (response) {
         return response.filter(function (event) {
