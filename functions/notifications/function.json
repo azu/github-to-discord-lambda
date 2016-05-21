@@ -1,0 +1,7 @@
+{
+  "description": "Post GitHub notifications to twitter",
+  "runtime": "nodejs4.3",
+  "handler": "index.handle",
+  "memory": 128,
+  "timeout": 5
+}
