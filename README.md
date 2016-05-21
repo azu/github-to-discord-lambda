@@ -24,7 +24,7 @@ You have to set these property.
 - `role` of lambda function
 - set `environment` to your token
 
-
+```
     "role": "arn:aws:iam::xxxxxxxxxxxx",
     "defaultEnvironment": "dev",
     "environment": {
@@ -34,6 +34,7 @@ You have to set these property.
         "TWITTER_ACCESS_TOKEN_KEY": "token key",
         "TWITTER_ACCESS_TOKEN_SECRET": "token  secret"
     }
+```
 
 ### Deploy
 
