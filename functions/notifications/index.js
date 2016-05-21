@@ -1,5 +1,7 @@
 const TweetTruncator = require("tweet-truncator").TweetTruncator;
 const GitHub = require("github-api");
+const parseGithubEvent = require("parse-github-event");
+const parseEventBody = require("./github/parse-event-body");
 const Twitter = require("twitter");
 const s3 = require("./s3");
 const isDEBUG = !!process.env.DEBUG;
@@ -13,6 +15,10 @@ const twitter = new Twitter({
 const gitHubAPI = new GitHub({
     token: process.env.GITHUB_TOKEN
 });
+
+function flatten(array) {
+    return Array.prototype.concat.apply([], array);
+}
 function postToTwitter(message) {
     if (isDEBUG) {
         return Promise.resolve();
@@ -27,12 +33,53 @@ function postToTwitter(message) {
 
     });
 }
+function getEvents(lastDate) {
+    const me = gitHubAPI.getUser();
+    return me._request('GET', '/events').then(function (response) {
+        return response.data;
+    }).then(function (response) {
+        return response.filter(function (event) {
+            return new Date(event["created_at"]).getTime() > lastDate.getTime();
+        }).map(buildEvent);
+    });
+}
+function buildEvent(event) {
+    const emojiMap = {
+        "ForkEvent": "\u{1F374}",
+        "ForkApplyEvent": "\u{1F374}",
+        "WatchEvent": "\u{231A}",
+        "PullRequestEvent": "\u{1F4DD}",
+        "IssuesEvent": "\u{1F6A7}",
+        "CommitCommentEvent": "\u{1F4DD}",
+        "PullRequestReviewCommentEvent": "\u{1F4DD}",
+        "IssueCommentEvent": "\u{1F4DD}",
+        "Other": ""
+    };
+    const getEmoji = function (event) {
+        return emojiMap[event.type] || emojiMap.Other;
+    };
+    const parsedEvent = parseGithubEvent.parse(event);
+    const eventDescription = parseGithubEvent.compile(event);
+    return {
+        "_id": event.id,// GitHub global event id
+        "date": event.created_at,
+        "user_name": event.actor.login,
+        "avatar_url": event.actor.avatar_url,
+        "repo_name": event.repo.name,
+        "title": "[" + event.repo.name + "] " + eventDescription,
+        "html_url": parsedEvent.html_url,
+        "body": parseEventBody(event) || "",
+        "emoji": getEmoji(event)
+    };
+}
 function getLatestNotification(lastDate) {
     const me = gitHubAPI.getUser();
     return me.listNotifications({
         since: lastDate.toISOString()
     }).then(function (response) {
         return response.data;
+    }).then(function (responses) {
+        return responses.map(buildNotification);
     });
 }
 function normalizeResponseAPIURL(url) {
@@ -40,7 +87,7 @@ function normalizeResponseAPIURL(url) {
         return "https://github.com/" + repo + "/" + type.replace("pulls", "pull") + "/" + number
     })
 }
-function buildNotifications(notifications) {
+function buildNotification(notification) {
     const emojiMap = {
         "PullRequest": "\u{1F4DD}",
         "Issue": "\u{1F6A7}",
@@ -49,32 +96,30 @@ function buildNotifications(notifications) {
     const getEmoji = function (notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
-    return notifications.map(function (notification) {
-        return {
-            "_id": notification.id,// github global event id
-            "date": notification.updated_at,
-            "user_name": notification.repository.owner.login,
-            "avatar_url": notification.repository.owner.avatar_url,
-            "repo_name": notification.repository.name,
-            "title": notification.repository.full_name,
-            "html_url": normalizeResponseAPIURL(notification.subject.url),
-            "request_url": notification.subject.latest_comment_url,
-            "body": notification.subject.title,
-            "emoji": getEmoji(notification)
-        };
-    });
+    return {
+        "_id": notification.id,// github global event id
+        "date": notification.updated_at,
+        "user_name": notification.repository.owner.login,
+        "avatar_url": notification.repository.owner.avatar_url,
+        "repo_name": notification.repository.name,
+        "title": "[" + notification.repository.full_name + "]",
+        "html_url": normalizeResponseAPIURL(notification.subject.url),
+        "request_url": notification.subject.latest_comment_url,
+        "body": notification.subject.title,
+        "emoji": getEmoji(notification)
+    };
 }
 
 function formatMessage(response) {
     var contents = {
-        title: response.emoji + "[" + response.title + "] ",
+        title: response.emoji + response.title,
         url: response.html_url,
         desc: response.body,
         quote: "",
         tags: []
     };
     var options = {
-        defaultPrefix: "See:",
+        defaultPrefix: "",
         template: '%title%\n%desc%\n%url%',
         truncatedOrder: [
             "tags",
@@ -101,10 +146,14 @@ exports.handle = function (event, context) {
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? new Date(1970, 0, 1) : lastDate;
         console.log("lastExecutedTime: " + lastDateInUse);
-        return getLatestNotification(lastDateInUse).then(function (responses) {
-            const promises = buildNotifications(responses).map(function (response) {
+        return Promise.all([
+            getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
+        ]).then(function (allResponse) {
+            const responses = flatten(allResponse);
+            const promises = responses.map(function (response) {
                 const message = formatMessage(response);
                 console.log(message);
+                console.log("------");
                 return postToTwitter(message);
             });
             return Promise.all(promises).then(function () {
