@@ -37,6 +37,29 @@ You have to set these property.
     }
 ```
 
+### Lambda role
+
+Lambda(`role": "arn:aws:iam::xxxxxxxxxxxx"`) should have following policy:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "dynamodb:*",
+                "lambda:*",
+                "logs:*",
+                "cloudwatch:*",
+                "autoscaling:Describe*"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ]
+}
+```
+
 ### Deploy
 
 This project use [Apex](https://github.com/apex/apex "Apex") fot deploy.
