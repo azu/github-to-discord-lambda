@@ -6,12 +6,13 @@ Lambda bot that fetch own GitHub notifications/events and post to Twitter.
 
     cd functions/notifications
     npm install
+    npm run init 
+    # create dynamodb table
 
 ## Requirement
 
 - Install [Apex](https://github.com/apex/apex "Apex")
 - GitHub token
-- Twitter Account 
 - Twitter token
 
 ### Config
