@@ -37,7 +37,7 @@ You have to set these property.
     }
 ```
 
-### Lambda role
+### Lambda role policy
 
 Lambda(`role": "arn:aws:iam::xxxxxxxxxxxx"`) should have following policy:
 
