@@ -3,7 +3,7 @@ const GitHub = require("github-api");
 const parseGithubEvent = require("parse-github-event");
 const parseEventBody = require("./github/parse-event-body");
 const Twitter = require("twitter");
-const s3 = require("./s3");
+const dynamodb = require("./aws/dynamodb");
 const moment = require("moment");
 const removeMd = require('remove-markdown');
 const isDEBUG = !!process.env.DEBUG;
@@ -154,7 +154,7 @@ function formatMessage(response) {
 
 exports.handle = function (event, context) {
     const bucketName = "github-to-twitter-lambda";
-    s3.getAsync(bucketName).then(function (lastTime) {
+    dynamodb.getItem(bucketName).then(function (lastTime) {
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
@@ -165,8 +165,7 @@ exports.handle = function (event, context) {
             const responses = flatten(allResponse);
             const promises = responses.map(function (response) {
                 const message = formatMessage(response);
-                console.log(message);
-                console.log("------");
+                console.log("-----\n" + message + "\n-----");
                 return postToTwitter(message);
             });
             return Promise.all(promises).then(function () {
@@ -179,7 +178,7 @@ exports.handle = function (event, context) {
         if (isDEBUG) {
             return Promise.resolve();
         }
-        return s3.putAsync(bucketName);
+        return dynamodb.updateItem(Date.now());
     }).then(function () {
         context.success();
     }, function (error) {

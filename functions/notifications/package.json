@@ -4,6 +4,7 @@
   "description": "github to twitter bot",
   "main": "index.js",
   "scripts": {
+    "init": "node init.js",
     "test": "node test.js"
   },
   "author": "azu",
