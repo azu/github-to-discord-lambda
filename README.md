@@ -68,6 +68,15 @@ After setting config, deploy this.
 
     apex deploy notifications
 
+## Cron
+
+lambda function run at once by default.
+You can set cron to lambda using [Scheduled Events - AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-scheduled-events.html "Using AWS Lambda with Scheduled Events - AWS Lambda").
+
+I've setting to run this per 2 minutes.
+
+![image](https://monosnap.com/file/lhJghW8bwKJmTZ3iDugi4B7eklRn5Z.png)
+
 ## Tests
 
 Tests in local with dry-run.
