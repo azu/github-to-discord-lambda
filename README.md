@@ -29,11 +29,12 @@ You have to set these property.
     "role": "arn:aws:iam::xxxxxxxxxxxx",
     "defaultEnvironment": "dev",
     "environment": {
-        "GITHUB_TOKEN": "GitHub Person token need repo/notification/user",
-        "TWITTER_CONSUMER_KEY": "app key",
-        "TWITTER_CONSUMER_SECRET": "app secret",
-        "TWITTER_ACCESS_TOKEN_KEY": "token key",
-        "TWITTER_ACCESS_TOKEN_SECRET": "token  secret"
+    "GITHUB_USER_NAME": "username",
+    "GITHUB_TOKEN": "GitHub Person token need repos/notification/user",
+    "TWITTER_CONSUMER_KEY": "app key",
+    "TWITTER_CONSUMER_SECRET": "app secret",
+    "TWITTER_ACCESS_TOKEN_KEY": "token key",
+    "TWITTER_ACCESS_TOKEN_SECRET": "token  secret"
     }
 ```
 
