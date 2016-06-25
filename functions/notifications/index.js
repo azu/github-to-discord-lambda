@@ -46,10 +46,10 @@ function getEvents(lastDate) {
     ];
     const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
-    return me._request('GET', '/users/' + userName + '/events').then(function (response) {
+    return me._request('GET', '/users/' + userName + '/received_events').then(function (response) {
         return response.data;
     }).then(function (response) {
-        console.log("GET /events");
+        console.log("GET /received_events");
         return response.filter(function (event) {
             return moment(event["created_at"]).diff(lastDate) > 0;
         }).filter(function (event) {
