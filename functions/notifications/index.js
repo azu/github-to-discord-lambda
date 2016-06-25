@@ -161,24 +161,26 @@ exports.handle = function (event, context) {
         console.log("lastExecutedTime: " + lastDateInUse);
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
-        ]).then(function (allResponse) {
-            const responses = flatten(allResponse);
-            const promises = responses.map(function (response) {
-                const message = formatMessage(response);
-                console.log("-----\n" + message + "\n-----");
-                return postToTwitter(message);
-            });
-            return Promise.all(promises).then(function () {
-                console.log("Success: " + promises.length + "posts");
-            }, function (error) {
-                console.error(error, error.stack);
-            });
-        });
-    }).then(function () {
+        ]);
+    }).then(function (allResponse) {
         if (isDEBUG) {
-            return Promise.resolve();
+            return allResponse;
         }
-        return dynamodb.updateItem(Date.now());
+        return dynamodb.updateItem(Date.now()).then(function(){
+            return allResponse;
+        });
+    }).then(function (allResponse) {
+        const responses = flatten(allResponse);
+        const promises = responses.map(function (response) {
+            const message = formatMessage(response);
+            console.log("-----\n" + message + "\n-----");
+            return postToTwitter(message);
+        });
+        return Promise.all(promises).then(function () {
+            console.log("Success: " + promises.length + "posts");
+        }, function (error) {
+            console.error(error, error.stack);
+        });
     }).then(function () {
         context.success();
     }, function (error) {
