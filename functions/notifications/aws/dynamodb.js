@@ -74,7 +74,7 @@ function updateItem(lastExecutedTime) {
             if (err) {
                 return reject(err);
             } else {
-                console.log("Update dynamodb", data);
+                console.log("Update dynamodb", lastExecutedTime);
                 return resolve(data);
             }
         });

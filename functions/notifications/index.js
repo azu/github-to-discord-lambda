@@ -49,6 +49,7 @@ function getEvents(lastDate) {
     return me._request('GET', '/users/' + userName + '/events').then(function (response) {
         return response.data;
     }).then(function (response) {
+        console.log("GET /events");
         return response.filter(function (event) {
             return moment(event["created_at"]).diff(lastDate) > 0;
         }).filter(function (event) {
@@ -92,6 +93,7 @@ function getLatestNotification(lastDate) {
     }).then(function (response) {
         return response.data;
     }).then(function (responses) {
+        console.log("GET /notifications");
         return responses.map(buildNotification);
     });
 }
