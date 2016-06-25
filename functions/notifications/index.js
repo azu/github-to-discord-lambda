@@ -38,11 +38,14 @@ function postToTwitter(message) {
 function getEvents(lastDate) {
     const filterTypes = [
         "WatchEvent",
+        "FollowEvent",
         "IssueCommentEvent",
         "PullRequestEvent",
+        "PullRequestReviewCommentEvent",
         "IssuesEvent",
         "FollowEvent",
-        "PublicEvent"
+        "PublicEvent",
+        "GistEvent"
     ];
     const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
