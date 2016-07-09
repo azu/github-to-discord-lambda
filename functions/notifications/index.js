@@ -160,7 +160,18 @@ function formatMessage(response) {
 exports.handle = function (event, context) {
     const bucketName = "github-to-twitter-lambda";
     console.log("will get dynamodb");
-    dynamodb.getItem(bucketName).then(function (lastTime) {
+    dynamodb.getItem(bucketName).then(function (response) {
+        // pass response to next then
+        if (isDEBUG) {
+            return response;
+        }
+        const currentTIme = Date.now();
+        console.log("willl update dynamodb:" + currentTIme);
+        return dynamodb.updateItem(currentTIme).then(function(){
+            console.log("did update dynamodb");
+            return response;
+        });
+    }).then(function (lastTime) {
         console.log("did get dynamodb:" + lastTime);
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
@@ -169,16 +180,6 @@ exports.handle = function (event, context) {
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
         ]);
-    }).then(function (allResponse) {
-        if (isDEBUG) {
-            return allResponse;
-        }
-        const currentTIme = Date.now();
-        console.log("willl update dynamodb:" + currentTIme);
-        return dynamodb.updateItem(currentTIme).then(function(){
-            console.log("did update dynamodb");
-            return allResponse;
-        });
     }).then(function (allResponse) {
         const responses = flatten(allResponse);
         console.log("willl post to twitter:" + responses.length);
