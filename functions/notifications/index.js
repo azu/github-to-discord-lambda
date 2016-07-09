@@ -159,7 +159,9 @@ function formatMessage(response) {
 
 exports.handle = function (event, context) {
     const bucketName = "github-to-twitter-lambda";
+    console.log("will get dynamodb");
     dynamodb.getItem(bucketName).then(function (lastTime) {
+        console.log("did get dynamodb:" + lastTime);
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
@@ -171,11 +173,15 @@ exports.handle = function (event, context) {
         if (isDEBUG) {
             return allResponse;
         }
-        return dynamodb.updateItem(Date.now()).then(function(){
+        const currentTIme = Date.now();
+        console.log("willl update dynamodb:" + currentTIme);
+        return dynamodb.updateItem(currentTIme).then(function(){
+            console.log("did update dynamodb");
             return allResponse;
         });
     }).then(function (allResponse) {
         const responses = flatten(allResponse);
+        console.log("willl post to twitter:" + responses.length);
         const promises = responses.map(function (response) {
             const message = formatMessage(response);
             console.log("-----\n" + message + "\n-----");
