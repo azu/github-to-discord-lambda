@@ -3,7 +3,7 @@
   "description": "GitHub Events to Twitter",
   "runtime": "nodejs4.3",
   "memory": 128,
-  "timeout": 5,
+  "timeout": 8,
   "role": "arn:aws:iam::xxxxxxxxxxxx",
   "defaultEnvironment": "dev",
   "environment": {
