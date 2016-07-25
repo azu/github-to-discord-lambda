@@ -162,7 +162,7 @@ exports.handle = function (event, context) {
     console.log("will get dynamodb");
     dynamodb.getItem(bucketName).then(function (response) {
         // pass response to next then
-        if (process.env["force"] !== false && isDEBUG) {
+        if (process.env["force"] === false && isDEBUG) {
             return response;
         }
         const currentTIme = Date.now();
