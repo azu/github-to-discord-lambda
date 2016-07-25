@@ -25,8 +25,8 @@ function postToTwitter(message) {
     if (isDEBUG) {
         return Promise.resolve();
     }
-    return new Promise(function (resolve, reject) {
-        twitter.post('statuses/update', {status: message}, function (error, tweet, response) {
+    return new Promise(function(resolve, reject) {
+        twitter.post('statuses/update', {status: message}, function(error, tweet, response) {
             if (error) {
                 reject(error);
             }
@@ -49,15 +49,17 @@ function getEvents(lastDate) {
     ];
     const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
-    return me._request('GET', '/users/' + userName + '/received_events').then(function (response) {
+    return me._request('GET', '/users/' + userName + '/received_events').then(function(response) {
         return response.data;
-    }).then(function (response) {
-        console.log("GET /received_events");
-        return response.filter(function (event) {
+    }).then(function(response) {
+        return response.filter(function(event) {
             return moment(event["created_at"]).diff(lastDate) > 0;
-        }).filter(function (event) {
+        }).filter(function(event) {
             return filterTypes.indexOf(event.type) !== -1;
         }).map(buildEvent);
+    }).then(function(response) {
+        console.log("GET /received_events : ", response.length);
+        return response
     });
 }
 function buildEvent(event) {
@@ -72,7 +74,7 @@ function buildEvent(event) {
         "IssueCommentEvent": "\u{1F4DD}",
         "Other": ""
     };
-    const getEmoji = function (event) {
+    const getEmoji = function(event) {
         return emojiMap[event.type] || emojiMap.Other;
     };
     const parsedEvent = parseGithubEvent.parse(event);
@@ -93,15 +95,15 @@ function getLatestNotification(lastDate) {
     const me = gitHubAPI.getUser();
     return me.listNotifications({
         since: lastDate.toISOString()
-    }).then(function (response) {
+    }).then(function(response) {
         return response.data;
-    }).then(function (responses) {
-        console.log("GET /notifications");
+    }).then(function(responses) {
+        console.log("GET /notifications:", responses.length);
         return responses.map(buildNotification);
     });
 }
 function normalizeResponseAPIURL(url) {
-    return url.replace(/^https:\/\/api\.github\.com\/repos\/(.*?)\/(commits|pulls|issues)\/(.*?)/, function (all, repo, type, number) {
+    return url.replace(/^https:\/\/api\.github\.com\/repos\/(.*?)\/(commits|pulls|issues)\/(.*?)/, function(all, repo, type, number) {
         return "https://github.com/" + repo + "/" + type.replace("pulls", "pull") + "/" + number
     })
 }
@@ -111,7 +113,7 @@ function buildNotification(notification) {
         "Issue": "\u{1F6A7}",
         "Other": "\u{26A0}"
     };
-    const getEmoji = function (notification) {
+    const getEmoji = function(notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
     return {
@@ -157,21 +159,21 @@ function formatMessage(response) {
     return status;
 }
 
-exports.handle = function (event, context) {
+exports.handle = function(event, context) {
     const bucketName = "github-to-twitter-lambda";
     console.log("will get dynamodb");
-    dynamodb.getItem(bucketName).then(function (response) {
+    dynamodb.getItem(bucketName).then(function(response) {
         // pass response to next then
         if (process.env["force"] === false && isDEBUG) {
             return response;
         }
         const currentTIme = Date.now();
-        console.log("willl update dynamodb:" + currentTIme);
-        return dynamodb.updateItem(currentTIme).then(function(){
+        console.log("will update dynamodb:" + currentTIme);
+        return dynamodb.updateItem(currentTIme).then(function() {
             console.log("did update dynamodb");
             return response;
         });
-    }).then(function (lastTime) {
+    }).then(function(lastTime) {
         console.log("did get dynamodb:" + lastTime);
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
@@ -180,22 +182,22 @@ exports.handle = function (event, context) {
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
         ]);
-    }).then(function (allResponse) {
+    }).then(function(allResponse) {
         const responses = flatten(allResponse);
-        console.log("willl post to twitter:" + responses.length);
-        const promises = responses.map(function (response) {
+        console.log("will post to twitter:" + responses.length);
+        const promises = responses.map(function(response) {
             const message = formatMessage(response);
             console.log("-----\n" + message + "\n-----");
             return postToTwitter(message);
         });
-        return Promise.all(promises).then(function () {
+        return Promise.all(promises).then(function() {
             console.log("Success: " + promises.length + "posts");
-        }, function (error) {
+        }, function(error) {
             console.error(error, error.stack);
         });
-    }).then(function () {
+    }).then(function() {
         context.success();
-    }, function (error) {
+    }, function(error) {
         context.fail(error);
     })
 };
