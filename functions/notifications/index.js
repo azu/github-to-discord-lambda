@@ -39,10 +39,10 @@ function getEvents(lastDate) {
     const filterTypes = [
         "WatchEvent",
         "FollowEvent",
-        "IssueCommentEvent",
-        "PullRequestEvent",
-        "PullRequestReviewCommentEvent",
-        "IssuesEvent",
+        // "IssueCommentEvent",
+        // "PullRequestEvent",
+        // "PullRequestReviewCommentEvent",
+        // "IssuesEvent",
         "FollowEvent",
         "PublicEvent",
         "GistEvent"
