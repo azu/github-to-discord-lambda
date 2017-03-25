@@ -195,7 +195,7 @@ exports.handle = function(event, context) {
         });
     }).then(function() {
         context.success();
-    }, function(error) {
+    }).catch(function(error) {
         context.fail(error);
     })
 };
