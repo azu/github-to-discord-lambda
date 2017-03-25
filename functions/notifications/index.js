@@ -194,8 +194,8 @@ exports.handle = function(event, context) {
             console.log("Success: " + promises.length + "posts");
         });
     }).then(function() {
-        context.success();
+        context();
     }).catch(function(error) {
-        context.fail(error);
+        context(error);
     })
 };
