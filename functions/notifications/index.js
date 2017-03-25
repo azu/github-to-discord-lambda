@@ -159,7 +159,7 @@ function formatMessage(response) {
     return status;
 }
 
-exports.handle = function(event, context) {
+exports.handle = function(event, context, callback) {
     const bucketName = "github-to-twitter-lambda";
     console.log("will get dynamodb");
     dynamodb.getItem(bucketName).then(function(response) {
@@ -194,8 +194,8 @@ exports.handle = function(event, context) {
             console.log("Success: " + promises.length + "posts");
         });
     }).then(function() {
-        context();
+        callback();
     }).catch(function(error) {
-        context(error);
-    })
+        callback(error);
+    });
 };
