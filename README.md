@@ -25,17 +25,24 @@ You have to set these property.
 - `role` of lambda function
 - set `environment` to your token
 
-```
-    "role": "arn:aws:iam::xxxxxxxxxxxx",
-    "defaultEnvironment": "dev",
-    "environment": {
+```json
+{
+  "name": "github-to-twitter",
+  "description": "GitHub Events to Twitter",
+  "runtime": "nodejs4.3",
+  "memory": 128,
+  "timeout": 8,
+  "role": "arn:aws:iam::xxxxxxxxxxxx",
+  "defaultEnvironment": "dev",
+  "environment": {
     "GITHUB_USER_NAME": "username",
     "GITHUB_TOKEN": "GitHub Person token need repos/notification/user",
     "TWITTER_CONSUMER_KEY": "app key",
     "TWITTER_CONSUMER_SECRET": "app secret",
     "TWITTER_ACCESS_TOKEN_KEY": "token key",
     "TWITTER_ACCESS_TOKEN_SECRET": "token  secret"
-    }
+  }
+}
 ```
 
 ### Lambda role policy
