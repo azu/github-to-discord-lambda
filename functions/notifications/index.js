@@ -192,8 +192,6 @@ exports.handle = function(event, context) {
         });
         return Promise.all(promises).then(function() {
             console.log("Success: " + promises.length + "posts");
-        }, function(error) {
-            console.error(error, error.stack);
         });
     }).then(function() {
         context.success();
