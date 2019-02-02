@@ -9,7 +9,7 @@ try {
 } catch (err) {
     // ignore
 }
-process.env["force"] = true;
+process.env["forceUpdateDynamoDb"] = true;
 const fn = require("./index").handle;
 fn({}, {}, (error, response) => {
     if (error) {

@@ -208,7 +208,8 @@ exports.handle = function(event, context, callback) {
     console.log("will get dynamodb");
     dynamodb.getItem(bucketName).then(function(response) {
         // pass response to next then
-        if (process.env["force"] === false && isDEBUG) {
+        if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
+            console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
             return response;
         }
         const currentTIme = Date.now();
@@ -222,7 +223,7 @@ exports.handle = function(event, context, callback) {
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
-        console.log("lastExecutedTime: " + lastDateInUse);
+        console.log("get events and notifications since " + moment(lastDateInUse).format("YYYY-MM-DD HH:mm:ss"));
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
         ]);
