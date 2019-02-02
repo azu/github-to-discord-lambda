@@ -33,7 +33,7 @@ You have to set these property.
 - `TWITTER_CONSUMER_SECRET`: Twitter consumer secret
 - `TWITTER_ACCESS_TOKEN_KEY`: Twitter access key
 - `TWITTER_ACCESS_TOKEN_SECRET`: Twitter access secret
-- `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `true`, send event/notification about private repository
+- `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification about private repository
     - Default: `false`
 
 ```json
