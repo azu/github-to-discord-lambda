@@ -7,7 +7,9 @@ const dynamodb = require("./aws/dynamodb");
 const moment = require("moment");
 const removeMd = require('remove-markdown');
 const isDEBUG = !!process.env.DEBUG;
+const ENABLE_PRIVATE_REPOSITORY = process.env.G2T_ENABLE_PRIVATE_REPOSITORY === "true";
 console.log("Debug mode: " + isDEBUG);
+console.log("ENABLE_PRIVATE_REPOSITORY: " + ENABLE_PRIVATE_REPOSITORY);
 const twitter = new Twitter({
     consumer_key: process.env.TWITTER_CONSUMER_KEY,
     consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
@@ -21,12 +23,13 @@ const gitHubAPI = new GitHub({
 function flatten(array) {
     return Array.prototype.concat.apply([], array);
 }
+
 function postToTwitter(message) {
     if (isDEBUG) {
         return Promise.resolve();
     }
     return new Promise(function(resolve, reject) {
-        twitter.post('statuses/update', {status: message}, function(error, tweet, response) {
+        twitter.post('statuses/update', { status: message }, function(error, tweet, response) {
             if (error) {
                 reject(error);
             }
@@ -35,6 +38,21 @@ function postToTwitter(message) {
 
     });
 }
+
+/**
+ * Filter function for event response
+ * @param event
+ */
+function privateEventFilter(event) {
+    // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter event.
+    if (ENABLE_PRIVATE_REPOSITORY) {return;}
+    // Remove private event
+    if (event && event.public === false) {
+        return false;
+    }
+    return true;
+}
+
 function getEvents(lastDate) {
     const filterTypes = [
         "WatchEvent",
@@ -49,19 +67,25 @@ function getEvents(lastDate) {
     ];
     const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
-    return me._request('GET', '/users/' + userName + '/received_events').then(function(response) {
-        return response.data;
-    }).then(function(response) {
-        return response.filter(function(event) {
-            return moment(event["created_at"]).diff(lastDate) > 0;
-        }).filter(function(event) {
-            return filterTypes.indexOf(event.type) !== -1;
-        }).map(buildEvent);
-    }).then(function(response) {
-        console.log("GET /received_events : ", response.length);
-        return response
-    });
+    return me._request('GET', '/users/' + userName + '/received_events')
+        .then(function(response) {
+            return response.data;
+        }).then(function(response) {
+            return response
+                .filter(privateEventFilter)
+                .filter(function(event) {
+                    return moment(event["created_at"]).diff(lastDate) > 0;
+                })
+                .filter(function(event) {
+                    return filterTypes.indexOf(event.type) !== -1;
+                })
+                .map(buildEvent);
+        }).then(function(response) {
+            console.log("GET /received_events : ", response.length);
+            return response
+        });
 }
+
 function buildEvent(event) {
     const emojiMap = {
         "ForkEvent": "\u{1F374}",
@@ -91,6 +115,7 @@ function buildEvent(event) {
         "emoji": getEmoji(event)
     };
 }
+
 function getLatestNotification(lastDate) {
     const me = gitHubAPI.getUser();
     return me.listNotifications({
@@ -99,14 +124,33 @@ function getLatestNotification(lastDate) {
         return response.data;
     }).then(function(responses) {
         console.log("GET /notifications:", responses.length);
-        return responses.map(buildNotification);
+        return responses
+            .filter(privateNotificationFilter)
+            .map(buildNotification);
     });
 }
+
 function normalizeResponseAPIURL(url) {
     return url.replace(/^https:\/\/api\.github\.com\/repos\/(.*?)\/(commits|pulls|issues)\/(.*?)/, function(all, repo, type, number) {
         return "https://github.com/" + repo + "/" + type.replace("pulls", "pull") + "/" + number
     })
 }
+
+
+/**
+ * Filter function for notification response
+ * @param notification
+ */
+function privateNotificationFilter(notification) {
+    // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter notification.
+    if (ENABLE_PRIVATE_REPOSITORY) {return;}
+    // Remove private repository
+    if (notification && notification.repository && notification.repository.private) {
+        return false;
+    }
+    return true;
+}
+
 function buildNotification(notification) {
     const emojiMap = {
         "PullRequest": "\u{1F4DD}",

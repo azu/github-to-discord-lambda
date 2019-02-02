@@ -11,11 +11,10 @@ try {
 }
 process.env["force"] = true;
 const fn = require("./index").handle;
-fn({}, {
-    success: function () {
-        console.log("=Finish!");
-    },
-    fail: function (error) {
+fn({}, {}, (error, response) => {
+    if (error) {
         console.error(error);
+    } else {
+        console.log(response);
     }
 });
