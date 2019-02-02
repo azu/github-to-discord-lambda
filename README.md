@@ -22,8 +22,19 @@ Lambda bot that fetch own GitHub notifications/events and post to Twitter.
     
 You have to set these property.    
 
-- `role` of lambda function
-- set `environment` to your token
+- Set `role` of lambda function
+- Set `environment` to your token
+
+**environment**:
+
+- `GITHUB_USER_NAME`: Your GitHub id
+- `GITHUB_TOKEN`: Your GitHub access token
+- `TWITTER_CONSUMER_KEY`: Twitter consumer key
+- `TWITTER_CONSUMER_SECRET`: Twitter consumer secret
+- `TWITTER_ACCESS_TOKEN_KEY`: Twitter access key
+- `TWITTER_ACCESS_TOKEN_SECRET`: Twitter access secret
+- `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification about private repository
+    - Default: `"false"` (string)
 
 ```json
 {
@@ -40,7 +51,8 @@ You have to set these property.
     "TWITTER_CONSUMER_KEY": "app key",
     "TWITTER_CONSUMER_SECRET": "app secret",
     "TWITTER_ACCESS_TOKEN_KEY": "token key",
-    "TWITTER_ACCESS_TOKEN_SECRET": "token  secret"
+    "TWITTER_ACCESS_TOKEN_SECRET": "token  secret",
+    "G2T_ENABLE_PRIVATE_REPOSITORY": "false"
   }
 }
 ```
