@@ -81,7 +81,7 @@ function getEvents(lastDate) {
                 })
                 .map(buildEvent);
         }).then(function(response) {
-            console.log("GET /received_events : ", response.length);
+            console.log("GET /received_events: ", response.length);
             return response
         });
 }
