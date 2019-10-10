@@ -240,7 +240,8 @@ exports.handle = function(event, context, callback) {
     }).then(function() {
         callback();
     }).catch(function(error) {
-        console.log(error.message, error.stack);
+        console.log("Failure: " + error.message);
+        console.log(error.stack);
         callback(error);
     });
 };
