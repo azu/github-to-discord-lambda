@@ -35,7 +35,6 @@ function postToTwitter(message) {
             }
             resolve();
         });
-
     });
 }
 
@@ -241,7 +240,7 @@ exports.handle = function(event, context, callback) {
     }).then(function() {
         callback();
     }).catch(function(error) {
-        console.error(error.message, error.stack);
+        console.log(error.message, error.stack);
         callback(error);
     });
 };
