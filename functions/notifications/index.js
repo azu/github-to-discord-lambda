@@ -74,7 +74,7 @@ function getEvents(lastDate) {
             return response
                 .filter(privateEventFilter)
                 .filter(function (event) {
-                    return moment(event["updated_at"]).diff(lastDate) > 0;
+                    return moment.utc(event["updated_at"]).diff(lastDate) > 0;
                 })
                 .filter(function (event) {
                     return filterTypes.indexOf(event.type) !== -1;
