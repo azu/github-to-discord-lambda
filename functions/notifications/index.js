@@ -29,8 +29,8 @@ function postToTwitter(message) {
     if (isDEBUG) {
         return Promise.resolve();
     }
-    return new Promise(function(resolve, reject) {
-        twitter.post('statuses/update', { status: message }, function(error, tweet, response) {
+    return new Promise(function (resolve, reject) {
+        twitter.post('statuses/update', { status: message }, function (error, tweet, response) {
             if (error) {
                 reject(error);
             }
@@ -45,7 +45,7 @@ function postToTwitter(message) {
  */
 function privateEventFilter(event) {
     // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter event.
-    if (ENABLE_PRIVATE_REPOSITORY) {return;}
+    if (ENABLE_PRIVATE_REPOSITORY) { return; }
     // Remove private event
     if (event && event.public === false) {
         return false;
@@ -68,19 +68,28 @@ function getEvents(lastDate) {
     const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
     return me._request('GET', '/users/' + userName + '/received_events')
-        .then(function(response) {
+        .then(function (response) {
             return response.data;
-        }).then(function(response) {
+        }).then(function (response) {
             return response
                 .filter(privateEventFilter)
-                .filter(function(event) {
+                .filter(function (event) {
                     return moment(event["updated_at"]).diff(lastDate) > 0;
                 })
-                .filter(function(event) {
+                .filter(function (event) {
                     return filterTypes.indexOf(event.type) !== -1;
                 })
-                .map(buildEvent);
-        }).then(function(response) {
+                .map((event) => {
+                    const description = buildEvent(event);
+                    if (!description) {
+                        console.log("This event can not build" + util.inspect(event, false, null));
+                    }
+                    return description
+                })
+                .filter(event => {
+                    return !!event;
+                });
+        }).then(function (response) {
             console.log("GET /received_events: ", response.length);
             return response
         });
@@ -98,10 +107,13 @@ function buildEvent(event) {
         "IssueCommentEvent": "\u{1F4DD}",
         "Other": ""
     };
-    const getEmoji = function(event) {
+    const getEmoji = function (event) {
         return emojiMap[event.type] || emojiMap.Other;
     };
     const parsedEvent = parseGithubEvent.parse(event);
+    if (!parsedEvent) {
+        return;
+    }
     const eventDescription = parseGithubEvent.compile(parsedEvent);
     return {
         "_id": event.id,// GitHub global event id
@@ -120,9 +132,9 @@ function getLatestNotification(lastDate) {
     const me = gitHubAPI.getUser();
     return me.listNotifications({
         since: lastDate.toISOString()
-    }).then(function(response) {
+    }).then(function (response) {
         return response.data;
-    }).then(function(responses) {
+    }).then(function (responses) {
         console.log("GET /notifications:", responses.length);
         return responses
             .filter(privateNotificationFilter)
@@ -131,7 +143,7 @@ function getLatestNotification(lastDate) {
 }
 
 function normalizeResponseAPIURL(url) {
-    return url.replace(/^https:\/\/api\.github\.com\/repos\/(.*?)\/(commits|pulls|issues)\/(.*?)/, function(all, repo, type, number) {
+    return url.replace(/^https:\/\/api\.github\.com\/repos\/(.*?)\/(commits|pulls|issues)\/(.*?)/, function (all, repo, type, number) {
         return "https://github.com/" + repo + "/" + type.replace("pulls", "pull") + "/" + number
     })
 }
@@ -143,7 +155,7 @@ function normalizeResponseAPIURL(url) {
  */
 function privateNotificationFilter(notification) {
     // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter notification.
-    if (ENABLE_PRIVATE_REPOSITORY) {return;}
+    if (ENABLE_PRIVATE_REPOSITORY) { return; }
     // Remove private repository
     if (notification && notification.repository && notification.repository.private) {
         return false;
@@ -157,7 +169,7 @@ function buildNotification(notification) {
         "Issue": "\u{1F6A7}",
         "Other": "\u{26A0}"
     };
-    const getEmoji = function(notification) {
+    const getEmoji = function (notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
     return {
@@ -203,10 +215,10 @@ function formatMessage(response) {
     return status;
 }
 
-exports.handle = function(event, context, callback) {
+exports.handle = function (event, context, callback) {
     const bucketName = "github-to-twitter-lambda";
     console.log("will get dynamodb");
-    dynamodb.getItem(bucketName).then(function(response) {
+    dynamodb.getItem(bucketName).then(function (response) {
         // pass response to next then
         if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
             console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
@@ -214,11 +226,11 @@ exports.handle = function(event, context, callback) {
         }
         const currentTIme = Date.now();
         console.log("will update dynamodb:" + currentTIme);
-        return dynamodb.updateItem(currentTIme).then(function() {
+        return dynamodb.updateItem(currentTIme).then(function () {
             console.log("did update dynamodb");
             return response;
         });
-    }).then(function(lastTime) {
+    }).then(function (lastTime) {
         console.log("did get dynamodb:" + lastTime);
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
@@ -227,20 +239,20 @@ exports.handle = function(event, context, callback) {
         return Promise.all([
             getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
         ]);
-    }).then(function(allResponse) {
+    }).then(function (allResponse) {
         const responses = flatten(allResponse);
         console.log("will post to twitter:" + responses.length);
-        const promises = responses.map(function(response) {
+        const promises = responses.map(function (response) {
             const message = formatMessage(response);
             console.log("-----\n" + message + "\n-----");
             return postToTwitter(message);
         });
-        return Promise.all(promises).then(function() {
+        return Promise.all(promises).then(function () {
             console.log("Success: " + promises.length + "posts");
         });
-    }).then(function() {
+    }).then(function () {
         callback();
-    }).catch(function(error) {
+    }).catch(function (error) {
         console.log("Failure: " + util.inspect(error, false, null));
         callback(error);
     });
