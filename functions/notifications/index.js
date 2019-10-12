@@ -6,6 +6,7 @@ const Twitter = require("twitter");
 const dynamodb = require("./aws/dynamodb");
 const moment = require("moment");
 const removeMd = require('remove-markdown');
+const util = require('util');
 const isDEBUG = !!process.env.DEBUG;
 const ENABLE_PRIVATE_REPOSITORY = process.env.G2T_ENABLE_PRIVATE_REPOSITORY === "true";
 console.log("Debug mode: " + isDEBUG);
@@ -240,7 +241,7 @@ exports.handle = function(event, context, callback) {
     }).then(function() {
         callback();
     }).catch(function(error) {
-        console.log("Failure: " + error);
+        console.log("Failure: " + util.inspect(error, false, null));
         callback(error);
     });
 };
