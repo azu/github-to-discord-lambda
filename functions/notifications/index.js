@@ -102,7 +102,7 @@ function buildEvent(event) {
         return emojiMap[event.type] || emojiMap.Other;
     };
     const parsedEvent = parseGithubEvent.parse(event);
-    const eventDescription = parseGithubEvent.compile(event);
+    const eventDescription = parseGithubEvent.compile(parsedEvent);
     return {
         "_id": event.id,// GitHub global event id
         "date": event.created_at,

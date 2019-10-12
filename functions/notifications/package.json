@@ -13,7 +13,7 @@
     "aws-sdk": "^2.548.0",
     "github-api": "^3.3.0",
     "moment": "^2.13.0",
-    "parse-github-event": "^1.1.2",
+    "parse-github-event": "^1.1.3",
     "remove-markdown": "^0.3.0",
     "tweet-truncator": "^1.0.4",
     "twitter": "^1.3.0"
