@@ -215,30 +215,44 @@ function formatMessage(response) {
     return status;
 }
 
+/**
+ * Timeline
+ * 
+ * Start                                                       End
+ * |----x-----------------------y-------------------------z-----|
+ *      ^                       |                         |   
+ *      getLastUpdatedTime      ^                         |
+ *                     getEvents&getNotifications         ^
+ *                                                SaveLastUpdateTime
+ * 
+ * Note: Missing items that is updated betweeen x ~ z 
+ */
 exports.handle = function (event, context, callback) {
     const bucketName = "github-to-twitter-lambda";
     console.log("will get dynamodb");
-    dynamodb.getItem(bucketName).then(function (response) {
-        // pass response to next then
-        if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
-            console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
-            return response;
-        }
-        const currentTIme = Date.now();
-        console.log("will update dynamodb:" + currentTIme);
-        return dynamodb.updateItem(currentTIme).then(function () {
-            console.log("did update dynamodb");
-            return response;
-        });
-    }).then(function (lastTime) {
+    dynamodb.getItem(bucketName).then(function (lastTime) {
         console.log("did get dynamodb:" + lastTime);
         const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
         console.log("get events and notifications since " + moment(lastDateInUse).format("YYYY-MM-DD HH:mm:ss"));
         return Promise.all([
-            getEvents(lastDateInUse), getLatestNotification(lastDateInUse)
+            getEvents(lastDateInUse), 
+            getLatestNotification(lastDateInUse)
         ]);
+    }).then(function (allResponse) {
+        // update lastDate
+        // pass response to next then
+        if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
+            console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
+            return allResponse;
+        }
+        const currentTIme = Date.now();
+        console.log("will update dynamodb:" + currentTIme);
+        return dynamodb.updateItem(currentTIme).then(function () {
+            console.log("did update dynamodb" + currentTIme);
+            return allResponse;
+        });
     }).then(function (allResponse) {
         const responses = flatten(allResponse);
         console.log("will post to twitter:" + responses.length);
