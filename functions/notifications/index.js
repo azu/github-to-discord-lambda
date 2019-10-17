@@ -1,5 +1,5 @@
 const TweetTruncator = require("tweet-truncator").TweetTruncator;
-const GitHub = require("github-api");
+const Octokit = require("@octokit/rest");
 const parseGithubEvent = require("parse-github-event");
 const parseEventBody = require("./github/parse-event-body");
 const Twitter = require("twitter");
@@ -11,14 +11,18 @@ const isDEBUG = !!process.env.DEBUG;
 const ENABLE_PRIVATE_REPOSITORY = process.env.G2T_ENABLE_PRIVATE_REPOSITORY === "true";
 console.log("Debug mode: " + isDEBUG);
 console.log("ENABLE_PRIVATE_REPOSITORY: " + ENABLE_PRIVATE_REPOSITORY);
+
+
+const DYNAMODB_LAST_UPDATED_KEY = "github-to-twitter-lambda";
+const DYNAMODB_EVENTS_ETAG = "github-to-twitter-lambda-etag";
 const twitter = new Twitter({
     consumer_key: process.env.TWITTER_CONSUMER_KEY,
     consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
     access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
     access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 });
-const gitHubAPI = new GitHub({
-    token: process.env.GITHUB_TOKEN
+const octokit = new Octokit({
+    auth: process.env.GITHUB_TOKEN
 });
 
 function flatten(array) {
@@ -45,7 +49,9 @@ function postToTwitter(message) {
  */
 function privateEventFilter(event) {
     // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter event.
-    if (ENABLE_PRIVATE_REPOSITORY) { return; }
+    if (ENABLE_PRIVATE_REPOSITORY) {
+        return;
+    }
     // Remove private event
     if (event && event.public === false) {
         return false;
@@ -53,7 +59,7 @@ function privateEventFilter(event) {
     return true;
 }
 
-function getEvents(lastDate) {
+function getEvents(lastDate, eTag) {
     const filterTypes = [
         "WatchEvent",
         "FollowEvent",
@@ -65,34 +71,58 @@ function getEvents(lastDate) {
         "PublicEvent",
         "GistEvent"
     ];
-    const me = gitHubAPI.getUser();
     const userName = process.env.GITHUB_USER_NAME;
-    return me._request('GET', '/users/' + userName + '/received_events')
-        .then(function (response) {
-            return response.data;
-        }).then(function (response) {
-            return response
-                .filter(privateEventFilter)
-                .filter(function (event) {
-                    return moment.utc(event["created_at"]).diff(lastDate) > 0;
-                })
-                .filter(function (event) {
-                    return filterTypes.indexOf(event.type) !== -1;
-                })
-                .map((event) => {
-                    const description = buildEvent(event);
-                    if (!description) {
-                        console.log("This event can not build" + util.inspect(event, false, null));
-                    }
-                    return description
-                })
-                .filter(event => {
-                    return !!event;
-                });
-        }).then(function (response) {
-            console.log("GET /received_events: ", response.length);
-            return response
-        });
+    return octokit.activity.listEventsForUser({
+        headers: {
+            "If-None-Match": eTag,
+        },
+        username: userName
+    }).then(response => {
+        return {
+            response: response.data,
+            eTag: response.headers.etag
+        };
+    }).catch(errorResponse => {
+        // Handle 304 modified as no contents response
+        // https://developer.github.com/v3/activity/events/
+        if (errorResponse.status === 304) {
+            console.log("getEvents: response.status: 304");
+            return {
+                response: [],
+                eTag: errorResponse.headers.etag
+            }
+        }
+        return Promise.reject(errorResponse);
+    }).then(function ({ response, eTag }) {
+        let items = response
+            .filter(privateEventFilter)
+            .filter(function (event) {
+                return moment.utc(event["created_at"]).diff(lastDate) > 0;
+            })
+            .filter(function (event) {
+                return filterTypes.indexOf(event.type) !== -1;
+            })
+            .map((event) => {
+                const description = buildEvent(event);
+                if (!description) {
+                    console.log("This event can not build" + util.inspect(event, false, null));
+                }
+                return description
+            })
+            .filter(event => {
+                return !!event;
+            });
+        return {
+            items,
+            eTag
+        };
+    }).then(({ items, eTag }) => {
+        console.log("GET /received_events: ", items.length);
+        return {
+            items,
+            eTag
+        }
+    });
 }
 
 function buildEvent(event) {
@@ -129,8 +159,7 @@ function buildEvent(event) {
 }
 
 function getLatestNotification(lastDate) {
-    const me = gitHubAPI.getUser();
-    return me.listNotifications({
+    return octokit.activity.listNotifications({
         since: lastDate.toISOString()
     }).then(function (response) {
         return response.data;
@@ -155,7 +184,9 @@ function normalizeResponseAPIURL(url) {
  */
 function privateNotificationFilter(notification) {
     // if G2T_ENABLE_PRIVATE_REPOSITORY=true, no filter notification.
-    if (ENABLE_PRIVATE_REPOSITORY) { return; }
+    if (ENABLE_PRIVATE_REPOSITORY) {
+        return;
+    }
     // Remove private repository
     if (notification && notification.repository && notification.repository.private) {
         return false;
@@ -217,41 +248,45 @@ function formatMessage(response) {
 
 /**
  * Timeline
- * 
+ *
  * Start                                                       End
  * |----x-----------------------y-------------------------z-----|
- *      ^                       |                         |   
+ *      ^                       |                         |
  *      getLastUpdatedTime      ^                         |
  *                     getEvents&getNotifications         ^
  *                                                SaveLastUpdateTime
- * 
- * Note: Missing items that is updated betweeen x ~ z 
+ *
+ * Note: Missing items that is updated betweeen x ~ z
  */
-exports.handle = function (event, context, callback) {
-    const bucketName = "github-to-twitter-lambda";
+exports.handle = async function (event, context, callback) {
     console.log("will get dynamodb");
-    dynamodb.getItem(bucketName).then(function (lastTime) {
-        console.log("did get dynamodb:" + lastTime);
-        const lastDate = lastTime > 0 ? moment.utc(lastTime).toDate() : moment.utc().toDate();
+    const { lastDate, eTag } = await dynamodb.getItem().then(({ lastExecutedTime, eventETag }) => {
+        console.log("did get dynamodb:" + lastExecutedTime, "eTags", eventETag);
+        const lastDate = lastExecutedTime > 0 ? moment.utc(lastExecutedTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
         const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
         console.log("get events and notifications since " + moment(lastDateInUse).format("YYYY-MM-DD HH:mm:ss"));
-        return Promise.all([
-            getEvents(lastDateInUse), 
-            getLatestNotification(lastDateInUse)
-        ]);
-    }).then(function (allResponse) {
+        return {
+            lastDate: lastDateInUse,
+            eTag: eventETag
+        };
+    });
+    return Promise.all([
+        getEvents(lastDate, eTag),
+        getLatestNotification(lastDate)
+    ]).then(function ([{ items, eTag }, notifications]) {
         // update lastDate
         // pass response to next then
         if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
             console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
-            return allResponse;
+            return items.concat(notifications);
         }
-        const currentTIme = Date.now();
-        console.log("will update dynamodb:" + currentTIme);
-        return dynamodb.updateItem(currentTIme).then(function () {
-            console.log("did update dynamodb" + currentTIme);
-            return allResponse;
+        const currentTime = Date.now();
+        console.log("will update dynamodb:" + currentTime);
+        return dynamodb.updateItem(currentTime, eTag).then(function () {
+            console.log("did update dynamodb:" + currentTime + ", eTag:" + eTag);
+            // concat
+            return items.concat(notifications);
         });
     }).then(function (allResponse) {
         const responses = flatten(allResponse);

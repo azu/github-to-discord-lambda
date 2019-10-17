@@ -34,14 +34,15 @@ function createTable() {
         });
     });
 }
-function createItem(lastExecutedTime) {
+function createItem(lastExecutedTime, eventETag) {
     return new Promise(function (resolve, reject) {
         const docClient = new AWS.DynamoDB.DocumentClient();
         const params = {
             TableName: tableName,
             Item: {
                 "id": itemIdentifier,
-                "lastExecutedTime": lastExecutedTime
+                "lastExecutedTime": lastExecutedTime,
+                "eventETag": eventETag
             }
         };
         docClient.putItem(params, function (err, data) {
@@ -54,7 +55,7 @@ function createItem(lastExecutedTime) {
     });
 }
 
-function updateItem(lastExecutedTime) {
+function updateItem(lastExecutedTime, eventETag) {
     return new Promise(function (resolve, reject) {
         const docClient = new AWS.DynamoDB.DocumentClient();
         const params = {
@@ -62,19 +63,21 @@ function updateItem(lastExecutedTime) {
             Key: {
                 "id": itemIdentifier
             },
-            "UpdateExpression": "set #lastExecutedTime = :val1",
+            "UpdateExpression": "set #lastExecutedTime = :val1, #eventETag = :val2",
             "ExpressionAttributeValues": {
-                ":val1": lastExecutedTime
+                ":val1": lastExecutedTime,
+                ":val2": eventETag
             },
             "ExpressionAttributeNames": {
-                "#lastExecutedTime": "lastExecutedTime"
+                "#lastExecutedTime": "lastExecutedTime",
+                "#eventETag": "eventETag"
             }
         };
         docClient.update(params, function (err, data) {
             if (err) {
                 return reject(err);
             } else {
-                console.log("Update dynamodb", lastExecutedTime);
+                console.log("Update dynamodb", lastExecutedTime, "eTag", eventETag);
                 return resolve(data);
             }
         });
@@ -95,8 +98,8 @@ function getItem() {
             if (err) {
                 return reject(err);
             } else {
-                console.log("dynamodb getItem", data);
-                return resolve(data["Item"]["lastExecutedTime"]);
+                console.log("dynamodb getItem", data["Item"]);
+                return resolve(data["Item"]);
             }
         });
     })
