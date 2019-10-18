@@ -195,7 +195,6 @@ function privateNotificationFilter(notification) {
 }
 
 function buildNotification(notification) {
-    console.log("notification", notification)
     const emojiMap = {
         "PullRequest": "\u{1F4DD}",
         "Issue": "\u{1F6A7}",
