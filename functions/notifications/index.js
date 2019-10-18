@@ -195,6 +195,7 @@ function privateNotificationFilter(notification) {
 }
 
 function buildNotification(notification) {
+    console.log("notification", notification)
     const emojiMap = {
         "PullRequest": "\u{1F4DD}",
         "Issue": "\u{1F6A7}",
@@ -203,6 +204,7 @@ function buildNotification(notification) {
     const getEmoji = function (notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
+    const commentIdPattern = /^https:.+\/comments\/(\d+)$/;
     return {
         "_id": notification.id,// github global event id
         "date": notification.updated_at,
@@ -212,15 +214,24 @@ function buildNotification(notification) {
         "title": "[" + notification.repository.full_name + "]",
         "html_url": normalizeResponseAPIURL(notification.subject.url),
         "request_url": notification.subject.latest_comment_url,
+        //     latest_comment_url: 'https://api.github.com/repos/microsoft/TypeScript/issues/comments/543489328',
+        "comment_id": commentIdPattern.test(notification.subject.latest_comment_url)
+            ? notification.subject.latest_comment_url.replace(commentIdPattern, "$1")
+            : undefined,
         "body": notification.subject.title,
-        "emoji": getEmoji(notification)
+        "emoji": getEmoji(notification),
     };
 }
 
 function formatMessage(response) {
+    // e.g.
+    // https://github.com/microsoft/TypeScript/issues/34550#issuecomment-543486701
+    const commentHash = response.comment_id
+        ? `#issuecomment-${response.comment_id}`
+        : "";
     var contents = {
         title: response.emoji + response.title,
-        url: response.html_url,
+        url: response.html_url + commentHash,
         desc: response.body,
         quote: "",
         tags: []
@@ -264,7 +275,7 @@ exports.handle = async function (event, context, callback) {
         console.log("did get dynamodb:" + lastExecutedTime, "eTags", eventETag);
         const lastDate = lastExecutedTime > 0 ? moment.utc(lastExecutedTime).toDate() : moment.utc().toDate();
         // if debug, use 1970s
-        const lastDateInUse = isDEBUG ? moment.utc().subtract(5, 'minutes').toDate() : lastDate;
+        const lastDateInUse = isDEBUG ? moment.utc().subtract(10, 'minutes').toDate() : lastDate;
         console.log("get events and notifications since " + moment(lastDateInUse).format("YYYY-MM-DD HH:mm:ss"));
         return {
             lastDate: lastDateInUse,
