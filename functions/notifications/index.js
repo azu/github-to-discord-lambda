@@ -303,8 +303,13 @@ exports.handle = async function (event, context, callback) {
         console.log("will post to twitter:" + responses.length);
         const promises = responses.map(function (response) {
             const message = formatMessage(response);
-            console.log("-----\n" + message + "\n-----");
-            return postToTwitter(message);
+            return postToTwitter(message).then(() => {
+                console.log("Post Success:" + message);
+            }).catch(error => {
+                console.log("Post Error:" + message);
+                console.log("=> Error response:" + JSON.stringify(response));
+                return Promise.reject(error);
+            })
         });
         return Promise.all(promises).then(function () {
             console.log("Success: " + promises.length + "posts");
