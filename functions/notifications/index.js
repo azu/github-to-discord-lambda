@@ -147,6 +147,7 @@ function buildEvent(event) {
     const eventDescription = parseGithubEvent.compile(parsedEvent);
     return {
         "_id": event.id,// GitHub global event id
+        "type": "event",
         "date": event.created_at,
         "user_name": event.actor.login,
         "avatar_url": event.actor.avatar_url,
@@ -206,6 +207,7 @@ function buildNotification(notification) {
     const commentIdPattern = /^https:.+\/comments\/(\d+)$/;
     return {
         "_id": notification.id,// github global event id
+        "type": "notification",
         "date": notification.updated_at,
         "user_name": notification.repository.owner.login,
         "avatar_url": notification.repository.owner.avatar_url,
@@ -219,6 +221,7 @@ function buildNotification(notification) {
             : undefined,
         "body": notification.subject.title,
         "emoji": getEmoji(notification),
+        "timestamp": moment(notification.updated_at).format("YYYY-MM-DD HH:mm")
     };
 }
 
@@ -232,12 +235,12 @@ function formatMessage(response) {
         title: response.emoji + response.title,
         url: response.html_url + commentHash,
         desc: response.body,
-        quote: "",
+        quote: response.timestamp ? response.timestamp : "",
         tags: []
     };
     var options = {
         defaultPrefix: "",
-        template: '%title%\n%desc%\n%url%',
+        template: '%title%\n%desc%\n%url%\n%quote%',
         truncatedOrder: [
             "tags",
             "quote",
