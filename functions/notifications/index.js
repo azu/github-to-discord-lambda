@@ -8,8 +8,10 @@ const moment = require("moment");
 const removeMd = require('remove-markdown');
 const util = require('util');
 const isDEBUG = !!process.env.DEBUG;
-const ENABLE_PRIVATE_REPOSITORY = process.env.G2T_ENABLE_PRIVATE_REPOSITORY === "true";
+const IS_JOIN_POST = String(process.env.JOIN_POST_MODE) === "true";
+const ENABLE_PRIVATE_REPOSITORY = String(process.env.G2T_ENABLE_PRIVATE_REPOSITORY) === "true";
 console.log("Debug mode: " + isDEBUG);
+console.log("IS_JOIN_POST: " + IS_JOIN_POST);
 console.log("ENABLE_PRIVATE_REPOSITORY: " + ENABLE_PRIVATE_REPOSITORY);
 
 
@@ -27,6 +29,19 @@ const octokit = new Octokit({
 
 function flatten(array) {
     return Array.prototype.concat.apply([], array);
+}
+
+// [1,2,3,4]
+// => [1,2], [3, 4]
+function* twoPairIterator(iterable) {
+    const iterator = iterable[Symbol.iterator]();
+    let current = iterator.next();
+    let next = iterator.next();
+    while (!current.done) {
+        yield [current.value, next.value];
+        current = iterator.next();
+        next = iterator.next();
+    }
 }
 
 function postToTwitter(message) {
@@ -235,7 +250,7 @@ function formatMessage(response) {
         title: response.emoji + response.title,
         url: response.html_url + commentHash,
         desc: response.body,
-        quote: response.timestamp ? response.timestamp : "",
+        quote: "",
         tags: []
     };
     var options = {
@@ -292,20 +307,28 @@ exports.handle = async function (event, context, callback) {
         // pass response to next then
         if (isDEBUG && process.env.forceUpdateDynamoDb !== "true") {
             console.log("DEBUG MODE: did not update dynamodb, because it is debug mode");
-            return items.concat(notifications);
+            return [items, notifications];
         }
         const currentTime = Date.now();
         console.log("will update dynamodb:" + currentTime);
         return dynamodb.updateItem(currentTime, eTag).then(function () {
             console.log("did update dynamodb:" + currentTime + ", eTag:" + eTag);
-            // concat
-            return items.concat(notifications);
+            return [items, notifications];
         });
-    }).then(function (allResponse) {
-        const responses = flatten(allResponse);
+    }).then(([events, notifications]) => {
+        const messages = events.map(event => {
+            return formatMessage(event);
+        });
+        const notificationMessages = IS_JOIN_POST
+            ? Array.from(twoPairIterator(notifications)).map(pairItem => {
+                return formatMessage(pairItem[0]) + (pairItem[1]
+                    ? "\n\n" + formatMessage(pairItem[1])
+                    : "");
+            })
+            : messages;
+        const responses = messages.concat(notificationMessages);
         console.log("will post to twitter:" + responses.length);
-        const promises = responses.map(function (response) {
-            const message = formatMessage(response);
+        const promises = notificationMessages.map(message => {
             return postToTwitter(message).then(() => {
                 console.log("Post Success:" + message);
             }).catch(error => {

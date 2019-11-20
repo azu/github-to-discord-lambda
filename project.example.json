@@ -13,6 +13,7 @@
     "TWITTER_CONSUMER_SECRET": "app secret",
     "TWITTER_ACCESS_TOKEN_KEY": "token key",
     "TWITTER_ACCESS_TOKEN_SECRET": "token  secret",
-    "G2T_ENABLE_PRIVATE_REPOSITORY": "false"
+    "G2T_ENABLE_PRIVATE_REPOSITORY": "false",
+    "JOIN_POST_MODE": "false"
   }
 }
