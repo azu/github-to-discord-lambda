@@ -221,7 +221,7 @@ function buildNotification(notification) {
             : undefined,
         "body": notification.subject.title,
         "emoji": getEmoji(notification),
-        "timestamp": moment(notification.updated_at).format("YYYY-MM-DD HH:mm:ss")
+        "timestamp": moment(notification.updated_at).format("HH:mm:ss")
     };
 }
 
