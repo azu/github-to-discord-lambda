@@ -35,7 +35,7 @@ You have to set these property.
 - `TWITTER_ACCESS_TOKEN_SECRET`: Twitter access secret
 - `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification about private repository
     - Default: `"false"` (string)
-- "JOIN_POST_MODE": If it is `"true"`, combine notification two to one. It aim to reduce post count.
+- `JOIN_POST_MODE`: If it is `"true"`, combine notification two to one. It aim to reduce post count.
     - Default: `"false"` (string)
 
 
