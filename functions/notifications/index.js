@@ -87,7 +87,7 @@ function getEvents(lastDate, eTag) {
         "GistEvent"
     ];
     const userName = process.env.GITHUB_USER_NAME;
-    return octokit.activity.listEventsForUser({
+    return octokit.activity.listReceivedEventsForUser({
         headers: {
             "If-None-Match": eTag,
         },
