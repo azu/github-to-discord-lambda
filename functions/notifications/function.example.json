@@ -1,7 +1,7 @@
 {
   "name": "github-to-twitter",
   "description": "GitHub Events to Twitter",
-  "runtime": "nodejs10",
+  "runtime": "nodejs12.x",
   "memory": 128,
   "timeout": 15,
   "role": "arn:aws:iam::xxxxxxxxxxxx",

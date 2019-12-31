@@ -1,0 +1,22 @@
+{
+  "name": "notifications",
+  "version": "1.0.0",
+  "description": "github to twitter bot",
+  "main": "index.js",
+  "scripts": {
+    "init": "node init.js",
+    "test": "node test.js"
+  },
+  "author": "azu",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^16.33.1",
+    "aws-sdk": "^2.548.0",
+    "moment": "^2.13.0",
+    "node-fetch": "^2.6.0",
+    "parse-github-event": "^1.1.3",
+    "remove-markdown": "^0.3.0",
+    "tweet-truncator": "^1.0.4",
+    "twitter": "^1.3.0"
+  }
+}
