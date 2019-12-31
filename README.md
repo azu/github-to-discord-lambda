@@ -17,7 +17,7 @@ Lambda bot that fetch own GitHub notifications/events and post to Twitter.
 
 ### Config
 
-    cp function.example.json function.json
+    cp functions/notifications/function.example.json functions/notifications/function.json
     # Edit function.json
     
 You have to set these property.    
