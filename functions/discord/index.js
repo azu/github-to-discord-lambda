@@ -86,7 +86,6 @@ function getEvents(lastDate, eTag) {
         }
         return Promise.reject(errorResponse);
     }).then(function ({ response, eTag }) {
-        console.log("response", response, lastDate);
         const items = response
             .filter(privateEventFilter)
             // .filter(function (event) {
@@ -287,7 +286,7 @@ exports.handle = async function (event, context, callback) {
         const notificationMessages = notifications.map(notification => formatMessage(notification));
         const responses = eventMessages.concat(notificationMessages);
         console.log("will post to discord:" + responses.length);
-        const promises = notificationMessages.map(message => {
+        const promises = responses.map(message => {
             return postToDiscord(message).then(() => {
                 console.log("Post Success:" + message);
             }).catch(error => {
