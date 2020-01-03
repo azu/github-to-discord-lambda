@@ -53,10 +53,10 @@ function getEvents(lastDate, eTag) {
     const filterTypes = [
         "WatchEvent",
         "FollowEvent",
-        // "IssueCommentEvent",
-        // "PullRequestEvent",
-        // "PullRequestReviewCommentEvent",
-        // "IssuesEvent",
+        "IssueCommentEvent",
+        "PullRequestEvent",
+        "PullRequestReviewCommentEvent",
+        "IssuesEvent",
         "FollowEvent",
         "PublicEvent",
         "GistEvent"
@@ -86,11 +86,12 @@ function getEvents(lastDate, eTag) {
         }
         return Promise.reject(errorResponse);
     }).then(function ({ response, eTag }) {
+        console.log("pre-filter GET /received_events: ", response.length);
         const items = response
             .filter(privateEventFilter)
-            // .filter(function (event) {
-            //     return moment.utc(event["created_at"]).diff(lastDate) > 0;
-            // })
+            .filter(function (event) {
+                return moment(event["created_at"]).diff(lastDate) > 0;
+            })
             .filter(function (event) {
                 return filterTypes.indexOf(event.type) !== -1;
             })
