@@ -333,7 +333,7 @@ exports.handle = async function (event, context, callback) {
                 console.log("Post Success:" + message);
             }).catch(error => {
                 console.log("Post Error:" + message);
-                console.log("=> Error response:" + JSON.stringify(response));
+                console.log("=> Error response:" + JSON.stringify(error));
                 return Promise.reject(error);
             })
         });
