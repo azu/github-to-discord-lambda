@@ -1,6 +1,6 @@
 const Octokit = require("@octokit/rest");
 const parseGithubEvent = require("parse-github-event");
-const parseEventBody = require("./github/parse-event-body");
+const { parseEventTitle, parseEventBody } = require("./github/parse-event-body");
 const dynamodb = require("./aws/dynamodb");
 const moment = require("moment");
 const fetch = require("node-fetch")
@@ -137,7 +137,6 @@ function buildEvent(event) {
     if (!parsedEvent) {
         return;
     }
-    const eventDescription = parseGithubEvent.compile(parsedEvent);
     return {
         "_id": event.id,// GitHub global event id
         "type": "event",
@@ -145,7 +144,7 @@ function buildEvent(event) {
         "user_name": event.actor.login,
         "avatar_url": event.actor.avatar_url,
         "repo_name": event.repo.name,
-        "title": "[" + event.repo.name + "] " + eventDescription,
+        "title": "[" + event.repo.name + "] " + parseEventTitle(event),
         "html_url": parsedEvent.html_url,
         "body": removeMd(parseEventBody(event) || ""),
         "emoji": getEmoji(event)
@@ -198,6 +197,7 @@ function buildNotification(notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
     const commentIdPattern = /^https:.+\/comments\/(\d+)$/;
+    let htmlUrl = normalizeResponseAPIURL(notification.subject.url);
     return {
         "_id": notification.id,// github global event id
         "type": "notification",
@@ -205,14 +205,14 @@ function buildNotification(notification) {
         "user_name": notification.repository.owner.login,
         "avatar_url": notification.repository.owner.avatar_url,
         "repo_name": notification.repository.name,
-        "title": "[" + notification.repository.full_name + "]",
-        "html_url": normalizeResponseAPIURL(notification.subject.url),
+        "title": "[" + notification.repository.full_name + "] " + notification.subject.title,
+        "html_url": htmlUrl,
         "request_url": notification.subject.latest_comment_url,
         //     latest_comment_url: 'https://api.github.com/repos/microsoft/TypeScript/issues/comments/543489328',
         "comment_id": commentIdPattern.test(notification.subject.latest_comment_url)
             ? notification.subject.latest_comment_url.replace(commentIdPattern, "$1")
             : undefined,
-        "body": notification.subject.title,
+        "body": htmlUrl,
         "emoji": getEmoji(notification),
         "timestamp": moment(notification.updated_at).toISOString()
     };
