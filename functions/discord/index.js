@@ -226,6 +226,7 @@ function formatMessage(response) {
         : "";
     const title = response.emoji + response.title;
     const url = response.html_url + commentHash;
+    const postBodyLimit = process.env.POST_BODY_LENGTH || 10000;
     return {
         "username": response.user_name,
         "avatar_url": response.avatar_url,
@@ -233,7 +234,7 @@ function formatMessage(response) {
         "embeds": [
             {
                 "title": title,
-                "description": response.body,
+                "description": response.body.length > postBodyLimit ? response.body.slice(0, postBodyLimit) + "…" : response.body,
                 "url": url,
                 // "timestamp": response.timestamp,
             }
@@ -289,7 +290,7 @@ exports.handle = async function (event, context, callback) {
         console.log("will post to discord:" + responses.length);
         const promises = responses.map(message => {
             return postToDiscord(message).then(() => {
-                console.log("Post Success:" + message);
+                console.log("Post Success:" + JSON.stringify(message));
             }).catch(error => {
                 console.log("Post Error:" + message);
                 return Promise.reject(error);
