@@ -226,7 +226,8 @@ function formatMessage(response) {
         : "";
     const title = response.emoji + response.title;
     const url = response.html_url + commentHash;
-    const postBodyLimit = process.env.POST_BODY_LENGTH || 10000;
+    const userLimit = Number(process.env.POST_BODY_LENGTH);
+    const postBodyLimit = Number.isNaN(userLimit) ? 10000 : userLimit;
     return {
         "username": response.user_name,
         "avatar_url": response.avatar_url,
