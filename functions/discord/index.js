@@ -197,7 +197,12 @@ function buildNotification(notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
     const commentIdPattern = /^https:.+\/comments\/(\d+)$/;
-    let htmlUrl = normalizeResponseAPIURL(notification.subject.url);
+    const htmlUrl = notification.subject.url
+        ? normalizeResponseAPIURL(notification.subject.url)
+        : "";
+    if (!htmlUrl) {
+        console.log("No HTML url on notification", util.inspect(notification));
+    }
     return {
         "_id": notification.id,// github global event id
         "type": "notification",
