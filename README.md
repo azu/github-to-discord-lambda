@@ -1,21 +1,27 @@
 # github-to-twitter-lambda
 
-Lambda bot that fetch own GitHub notifications/events and post to Twitter.
+Lambda bot that fetch own GitHub notifications/events and post to Twitter or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
-## Installation
+## Discors
+
+See [github-to-discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
+
+## Twitter
+
+### Installation
 
     cd functions/notifications
     npm install
     npm run init 
     # create dynamodb table
 
-## Requirement
+### Requirement
 
 - Install [Apex](https://github.com/apex/apex "Apex")
 - GitHub token
 - Twitter token
 
-### Config
+#### Config
 
     cp functions/notifications/function.example.json functions/notifications/function.json
     # Edit function.json
@@ -91,7 +97,7 @@ After setting config, deploy this.
 
     apex deploy notifications
 
-## Cron
+### Cron
 
 lambda function run at once by default.
 You can set cron to lambda using [Scheduled Events - AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-scheduled-events.html "Using AWS Lambda with Scheduled Events - AWS Lambda").
