@@ -2,7 +2,7 @@
 
 Lambda bot that fetch own GitHub notifications/events and post to Twitter or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
-## Discors
+## Discord
 
 See [github-to-discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
