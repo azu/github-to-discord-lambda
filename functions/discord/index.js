@@ -197,9 +197,15 @@ function buildNotification(notification) {
         return emojiMap[notification.subject.type] || emojiMap.Other;
     };
     const commentIdPattern = /^https:.+\/comments\/(\d+)$/;
-    const htmlUrl = notification.subject.url
-        ? normalizeResponseAPIURL(notification.subject.url)
-        : "";
+    const htmlUrl = (() => {
+        if (notification.subject.url) {
+            return normalizeResponseAPIURL(notification.subject.url);
+        }
+        if (notification.subject.type === "Discussion") {
+            return `${notification.repository.html_url}/discussions/`;
+        }
+        return ""
+    })();
     if (!htmlUrl) {
         console.log("No HTML url on notification", util.inspect(notification));
     }
