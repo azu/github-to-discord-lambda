@@ -1,29 +1,32 @@
-# github-to-twitter-lambda
+# github-to-discord lambe
 
-Lambda bot that fetch own GitHub notifications/events and post to Twitter or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
+Lambda bot that fetch own GitHub notifications/events and post to ~~Twitter~~ or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
+
+Note: Drop support Twitter.
 
 ## Discord
 
 See [github-to-discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
-## Twitter
-
-### Installation
-
-    cd functions/notifications
-    npm install
-    npm run init 
-    # create dynamodb table
+## Discord
 
 ### Requirement
 
 - AWS CLI
 - GitHub token
-- Twitter token
+- Discord webhook url
+
+### Installation
+
+    cd functions/discord
+    corepack enable
+    yarn install
+    npm run init
+    # create dynamodb table
 
 #### Config
 
-You need to following env to `.env` 
+You need to following env to `.env`
 
 ```env
 GITHUB_USER_NAME=you
@@ -37,14 +40,11 @@ POST_BODY_LENGTH=200
 
 - `GITHUB_USER_NAME`: Your GitHub id
 - `GITHUB_TOKEN`: Your GitHub access token
-- `TWITTER_CONSUMER_KEY`: Twitter consumer key
-- `TWITTER_CONSUMER_SECRET`: Twitter consumer secret
-- `TWITTER_ACCESS_TOKEN_KEY`: Twitter access key
-- `TWITTER_ACCESS_TOKEN_SECRET`: Twitter access secret
+- `DISCORD_WEBHOOK`: Discord Webhook URL
 - `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification about private repository
     - Default: `"false"` (string)
-- `JOIN_POST_MODE`: If it is `"true"`, combine notification two to one. It aim to reduce post count.
-    - Default: `"false"` (string)
+- `POST_BODY_LENGTH`: Post body length
+    - Default: `200` (number)
 
 ### Lambda role policy
 
@@ -52,20 +52,20 @@ Lambda(`role": "arn:aws:iam::xxxxxxxxxxxx"`) should have following policy:
 
 ```json
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "dynamodb:*",
-                "lambda:*",
-                "logs:*",
-                "cloudwatch:*",
-                "autoscaling:Describe*"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "dynamodb:*",
+        "lambda:*",
+        "logs:*",
+        "cloudwatch:*",
+        "autoscaling:Describe*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
 }
 ```
 
