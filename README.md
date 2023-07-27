@@ -1,4 +1,4 @@
-# github-to-discord lambe
+# github-to-discord lambda
 
 Lambda bot that fetch own GitHub notifications/events and post to ~~Twitter~~ or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
