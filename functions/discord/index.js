@@ -29,6 +29,9 @@ function postToDiscord(message) {
         },
         body: JSON.stringify(message)
     }).then(res => {
+        if (!res.ok) {
+            throw new Error(res.statusText);
+        }
         return res.text();
     });
 }
