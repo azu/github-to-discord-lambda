@@ -1,14 +1,7 @@
 // LICENSE : MIT
 "use strict";
 process.env.DEBUG = true;
-try {
-    var config = require('./function.json').environment;
-    for (var key in config) {
-        process.env[key] = config[key];
-    }
-} catch (err) {
-    // ignore
-}
+require("dotenv").config();
 const fn = require("./index").handle;
 fn({}, {}, (error, response) => {
     if (error) {
