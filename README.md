@@ -41,7 +41,7 @@ POST_BODY_LENGTH=200
 - `GITHUB_USER_NAME`: Your GitHub id
 - `GITHUB_TOKEN`: Your GitHub access token
 - `DISCORD_WEBHOOK`: Discord Webhook URL
-- `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification about private repository
+- `G2T_ENABLE_PRIVATE_REPOSITORY`: If it is `"true"`, send event/notification of private repositories
     - Default: `"false"` (string)
 - `POST_BODY_LENGTH`: Post body length
     - Default: `200` (number)
