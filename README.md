@@ -45,7 +45,6 @@ POST_BODY_LENGTH=200
     - Default: `"false"` (string)
 - `POST_BODY_LENGTH`: Post body length
     - Default: `200` (number)
-
 ### Lambda role policy
 
 Lambda(`role": "arn:aws:iam::xxxxxxxxxxxx"`) should have following policy:
