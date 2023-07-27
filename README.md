@@ -17,19 +17,21 @@ See [github-to-discord](https://github.com/azu/github-to-twitter-lambda/tree/mas
 
 ### Requirement
 
-- Install [Apex](https://github.com/apex/apex "Apex")
+- AWS CLI
 - GitHub token
 - Twitter token
 
 #### Config
 
-    cp functions/notifications/function.example.json functions/notifications/function.json
-    # Edit function.json
-    
-You have to set these property.    
+You need to following env to `.env` 
 
-- Set `role` of lambda function
-- Set `environment` to your token
+```env
+GITHUB_USER_NAME=you
+GITHUB_TOKEN=ghp...
+G2T_ENABLE_PRIVATE_REPOSITORY=false
+DISCORD_WEBHOOK=https://...
+POST_BODY_LENGTH=200
+```
 
 **environment**:
 
@@ -43,28 +45,6 @@ You have to set these property.
     - Default: `"false"` (string)
 - `JOIN_POST_MODE`: If it is `"true"`, combine notification two to one. It aim to reduce post count.
     - Default: `"false"` (string)
-
-
-```json
-{
-  "name": "github-to-twitter",
-  "description": "GitHub Events to Twitter",
-  "runtime": "nodejs4.3",
-  "memory": 128,
-  "timeout": 8,
-  "role": "arn:aws:iam::xxxxxxxxxxxx",
-  "defaultEnvironment": "dev",
-  "environment": {
-    "GITHUB_USER_NAME": "username",
-    "GITHUB_TOKEN": "GitHub Person token need repos/notification/user",
-    "TWITTER_CONSUMER_KEY": "app key",
-    "TWITTER_CONSUMER_SECRET": "app secret",
-    "TWITTER_ACCESS_TOKEN_KEY": "token key",
-    "TWITTER_ACCESS_TOKEN_SECRET": "token  secret",
-    "G2T_ENABLE_PRIVATE_REPOSITORY": "false"
-  }
-}
-```
 
 ### Lambda role policy
 
@@ -91,11 +71,11 @@ Lambda(`role": "arn:aws:iam::xxxxxxxxxxxx"`) should have following policy:
 
 ### Deploy
 
-This project use [Apex](https://github.com/apex/apex "Apex") fot deploy.
+Use deploy.sh
 
-After setting config, deploy this.
+    ./deploy.sh
 
-    apex deploy notifications
+You need to set up AWS CLI before deploy.
 
 ### Cron
 
@@ -112,10 +92,6 @@ Tests in local with dry-run.
 
     cd functions/notifications
     npm test
-
-Tests by apex
-
-    apex invoke notifications
 
 ## Contributing
 
