@@ -2,7 +2,7 @@
 
 Lambda bot that fetch own GitHub notifications/events and post to ~~Twitter~~ or [discord](https://github.com/azu/github-to-twitter-lambda/tree/master/functions/discord)
 
-Note: Drop support Twitter.
+Note: [Drop Twitter support](https://github.com/azu/github-to-twitter-lambda/commit/b3fe3ab0b35fe860f4f3eaedace48e5ec336d9aa).
 
 ## Discord
 
